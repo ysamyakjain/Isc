@@ -546,6 +546,7 @@ async def login_admin(admin_login: UserLogin) -> JSONResponse:
         # Generate JWT token
         token_data = {
             "id": str(admin["_id"]),
+            "username": admin["username"],
             "email": admin["email"],
             "role": admin["role"],
             "iat": datetime.utcnow(),
@@ -641,7 +642,7 @@ async def get_all_shops(
 # get one shop
 @app.get("/get-shop", tags=["shops"])
 async def get_shop(
-    current_user: dict = Depends(get_current_admin_user),
+    current_user: dict = Depends(get_current_admin_user), shop_id: str = None
 ) -> JSONResponse:
     try:
         db = Database("isc", "shops")
@@ -659,7 +660,7 @@ async def get_shop(
         )
     try:
         # Get one shop
-        shop = collection.find_one({"owner": ObjectId(current_user["id"])})
+        shop = collection.find_one({"_id": ObjectId(shop_id)})
         if not shop:
             logging.info(f"Shop {current_user['username']} not found")
             return JSONResponse(
@@ -779,7 +780,7 @@ async def update_shop(
             {"_id": ObjectId(shop_id)},
             {"$set": shop},
         )
-
+        logging.info(update_shop)
         if updated_shop.modified_count == 0:
             logging.info(f"Shop {current_user['username']} not found")
             return JSONResponse(
